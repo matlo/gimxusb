@@ -1,0 +1,3 @@
+[submodule "gimxcommon"]
+	path = gimxcommon
+	url = https://github.com/matlo/gimxcommon.git
