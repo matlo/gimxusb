@@ -1,6 +1,6 @@
 OBJECTS += $(patsubst %.c,%.o,$(wildcard src/*.c))
 
-CPPFLAGS += -Iinclude -I.
+CPPFLAGS += -Iinclude -I. -I../
 CFLAGS += -fPIC
 
 LDFLAGS += -lusb-1.0
