@@ -32,6 +32,25 @@ struct usb_hid_descriptor {
   } rdesc[0];
 } PACKED;
 
+#define GUSB_EP_CAP_ISO (1 << 0)
+#define GUSB_EP_CAP_BLK (1 << 1)
+#define GUSB_EP_CAP_INT (1 << 2)
+
+#define GUSB_EP_CAP_NONE 0
+#define GUSB_EP_CAP_ALL (GUSB_EP_CAP_ISO | GUSB_EP_CAP_BLK | GUSB_EP_CAP_INT)
+
+#define GUSB_EP_DIR_OUT(PROP) (PROP << 0)
+#define GUSB_EP_DIR_IN(PROP) (PROP << 3)
+
+#define GUSB_EP_DIR_BIDIR(PROP) ((1 << 6) | GUSB_EP_DIR_IN(PROP) | GUSB_EP_DIR_OUT(PROP))
+
+#define GUSB_EP_OUT_USED (1 << 7)
+#define GUSB_EP_IN_USED (1 << 8)
+
+typedef struct {
+  unsigned short ep[USB_ENDPOINT_NUMBER_MASK];
+} s_ep_props;
+
 typedef enum {
   E_TRANSFER_TIMED_OUT = -1,
   E_TRANSFER_STALL = -2,
@@ -88,6 +107,11 @@ typedef struct {
     struct usb_string_descriptor langId0;
     unsigned int nbOthers;
     struct p_other * others; //nbOthers elements
+    enum usb_device_speed speed;
+    struct {
+      struct usb_qualifier_descriptor qualifier;
+      struct p_configuration * configurations; //device.bNumConfigurations elements
+    } other_speed;
 } s_usb_descriptors;
 
 struct gusb_device {
