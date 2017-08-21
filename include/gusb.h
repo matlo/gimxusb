@@ -57,9 +57,9 @@ typedef enum {
   E_TRANSFER_ERROR = -3,
 } e_transfer_status;
 
-typedef int (* GUSB_READ_CALLBACK)(int user, unsigned char endpoint, const void * buf, int status);
-typedef int (* GUSB_WRITE_CALLBACK)(int user, unsigned char endpoint, int status);
-typedef int (* GUSB_CLOSE_CALLBACK)(int user);
+typedef int (* GUSB_READ_CALLBACK)(void * user, unsigned char endpoint, const void * buf, int status);
+typedef int (* GUSB_WRITE_CALLBACK)(void * user, unsigned char endpoint, int status);
+typedef int (* GUSB_CLOSE_CALLBACK)(void * user);
 #ifndef WIN32
 typedef GPOLL_REGISTER_FD GUSB_REGISTER_SOURCE;
 typedef GPOLL_REMOVE_FD GUSB_REMOVE_SOURCE;
@@ -114,26 +114,28 @@ typedef struct {
     } other_speed;
 } s_usb_descriptors;
 
-struct gusb_device {
+struct gusb_device_info {
     unsigned short vendor_id;
     unsigned short product_id;
     char * path;
-    struct gusb_device * next;
+    struct gusb_device_info * next;
 };
+
+struct gusb_device;
 
 int gusb_init();
 int gusb_exit();
-int gusb_open_ids(unsigned short vendor, unsigned short product);
-struct gusb_device * gusb_enumerate(unsigned short vendor, unsigned short product);
-void gusb_free_enumeration(struct gusb_device * usb_devs);
-int gusb_open_path(const char * path);
-const s_usb_descriptors * gusb_get_usb_descriptors(int device);
-int gusb_close(int device);
-int gusb_read_timeout(int device, unsigned char endpoint, void * buf, unsigned int count, unsigned int timeout);
-int gusb_register(int device, int user, const GUSB_CALLBACKS * callbacks);
-int gusb_write(int device, unsigned char endpoint, const void * buf, unsigned int count);
-int gusb_write_timeout(int device, unsigned char endpoint, void * buf, unsigned int count,
+struct gusb_device * gusb_open_ids(unsigned short vendor, unsigned short product);
+struct gusb_device_info * gusb_enumerate(unsigned short vendor, unsigned short product);
+void gusb_free_enumeration(struct gusb_device_info * usb_devs);
+struct gusb_device * gusb_open_path(const char * path);
+const s_usb_descriptors * gusb_get_usb_descriptors(struct gusb_device * device);
+int gusb_close(struct gusb_device * device);
+int gusb_read_timeout(struct gusb_device * device, unsigned char endpoint, void * buf, unsigned int count, unsigned int timeout);
+int gusb_register(struct gusb_device * device, void * user, const GUSB_CALLBACKS * callbacks);
+int gusb_write(struct gusb_device * device, unsigned char endpoint, const void * buf, unsigned int count);
+int gusb_write_timeout(struct gusb_device * device, unsigned char endpoint, void * buf, unsigned int count,
     unsigned int timeout);
-int gusb_poll(int device, unsigned char endpoint);
+int gusb_poll(struct gusb_device * device, unsigned char endpoint);
 
 #endif /* GUSB_H_ */

@@ -78,20 +78,20 @@ static struct {
 
 static int ff_index = -1;
 
-static int usb = -1;
+static struct gusb_device * device = NULL;
 
 static char * usb_select() {
 
   char * path = NULL;
 
-  struct gusb_device * usb_devs = gusb_enumerate(0x0000, 0x0000);
+  struct gusb_device_info * usb_devs = gusb_enumerate(0x0000, 0x0000);
   if (usb_devs == NULL) {
     fprintf(stderr, "No usb device detected!\n");
     return NULL;
   }
   printf("Available usb devices:\n");
   unsigned int index = 0;
-  struct gusb_device * current;
+  struct gusb_device_info * current;
   for (current = usb_devs; current != NULL; current = current->next) {
     printf("%d VID 0x%04x PID 0x%04x PATH %s\n", index++, current->vendor_id, current->product_id, current->path);
   }
@@ -145,14 +145,14 @@ static void dump(const unsigned char * packet, unsigned char length) {
   printf("\n");
 }
 
-int usb_read(int user __attribute__((unused)), unsigned char endpoint, const void * buf, int status) {
+int usb_read(void * user __attribute__((unused)), unsigned char endpoint, const void * buf, int status) {
 
   if (status < 0) {
     set_done();
     return 1;
   }
 
-  int ret = gusb_poll(usb, endpoint);
+  int ret = gusb_poll(device, endpoint);
   if (ret < 0) {
     set_done();
     return 1;
@@ -174,7 +174,7 @@ static int usb_busy = 0;
 
 static int counter = 0;
 
-void rumble_task(int device) {
+void rumble_task() {
 
   if(rumble_index < 0) {
     return;
@@ -204,7 +204,7 @@ void rumble_task(int device) {
   }
 }
 
-void ff_task(int device) {
+void ff_task() {
 
   if(ff_index < 0) {
     return;
@@ -245,16 +245,16 @@ void ff_task(int device) {
   }
 }
 
-void usb_task(int device) {
+void usb_task() {
 
   if(is_done()) {
     return;
   }
-  rumble_task(device);
-  ff_task(device);
+  rumble_task();
+  ff_task();
 }
 
-int usb_write(int user __attribute__((unused)), unsigned char endpoint __attribute__((unused)), int transfered __attribute__((unused))) {
+int usb_write(void * user __attribute__((unused)), unsigned char endpoint __attribute__((unused)), int transfered __attribute__((unused))) {
 
   /*struct timeval t;
   gettimeofday(&t, NULL);
@@ -269,18 +269,18 @@ int usb_write(int user __attribute__((unused)), unsigned char endpoint __attribu
       if(ff_index >= 0) {
         endpoint = ff_cmds[ff_index].endpoints.in;
       }
-      int ret = gusb_poll(usb, endpoint);
+      int ret = gusb_poll(device, endpoint);
       if (ret < 0) {
         set_done();
       }
   }
 
   usb_busy = 0;
-  usb_task(usb);
+  usb_task();
   return 0;
 }
 
-int usb_close(int user __attribute__((unused))) {
+int usb_close(void * user __attribute__((unused))) {
   set_done();
   return 0;
 }
@@ -300,11 +300,11 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
     exit(-1);
   }
 
-  usb = gusb_open_path(path);
+  device = gusb_open_path(path);
 
-  if (usb >= 0) {
+  if (device != NULL) {
 
-    const s_usb_descriptors * usb_desc = gusb_get_usb_descriptors(usb);
+    const s_usb_descriptors * usb_desc = gusb_get_usb_descriptors(device);
 
     printf("Opened device: VID 0x%04x PID 0x%04x PATH %s\n", usb_desc->device.idVendor, usb_desc->device.idProduct, path);
 
@@ -315,7 +315,7 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
             .fp_register = REGISTER_FUNCTION,
             .fp_remove = REMOVE_FUNCTION,
     };
-    if (gusb_register(usb, 42, &gusb_callbacks) != -1) {
+    if (gusb_register(device, NULL, &gusb_callbacks) != -1) {
 
       GTIMER_CALLBACKS timer_callbacks = {
               .fp_read = timer_read,
@@ -323,8 +323,8 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
               .fp_register = REGISTER_FUNCTION,
               .fp_remove = REMOVE_FUNCTION,
       };
-      int timer = gtimer_start(42, PERIOD, &timer_callbacks);
-      if (timer < 0) {
+      struct gtimer * timer = gtimer_start(NULL, PERIOD, &timer_callbacks);
+      if (timer == NULL) {
         set_done();
       }
 
@@ -343,7 +343,7 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
                   .data = { }
           };
 
-          int ret = gusb_write(usb, 0x00, &transfer, sizeof(transfer.req));
+          int ret = gusb_write(device, 0x00, &transfer, sizeof(transfer.req));
           if (ret < 0) {
               set_done();
           } else {
@@ -358,19 +358,19 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
         ++counter;
       }
 
-      if (timer >= 0) {
+      if (timer != NULL) {
         gtimer_close(timer);
       }
 
       if(rumble_index >= 0) {
-        gusb_write_timeout(usb, rumble_cmds[rumble_index].endpoints.out, rumble_cmds[rumble_index].stop.data, rumble_cmds[rumble_index].stop.length, 1000);
+        gusb_write_timeout(device, rumble_cmds[rumble_index].endpoints.out, rumble_cmds[rumble_index].stop.data, rumble_cmds[rumble_index].stop.length, 1000);
       }
 
       if(ff_index >= 0) {
-        gusb_write_timeout(usb, ff_cmds[ff_index].endpoints.out, ff_cmds[ff_index].stop.data, ff_cmds[ff_index].stop.length, 1000);
+        gusb_write_timeout(device, ff_cmds[ff_index].endpoints.out, ff_cmds[ff_index].stop.data, ff_cmds[ff_index].stop.length, 1000);
       }
 
-      gusb_close(usb);
+      gusb_close(device);
     }
   }
 
