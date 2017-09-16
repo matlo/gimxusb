@@ -719,7 +719,6 @@ static int probe_configurations (struct gusb_device * device) {
       case LIBUSB_DT_DEVICE:
       case LIBUSB_DT_STRING:
       default:
-      fprintf(stderr, "unhandled descriptor type: 0x%02x\n", header->bDescriptorType);
       break;
       }
       
