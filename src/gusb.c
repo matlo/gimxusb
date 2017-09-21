@@ -693,7 +693,6 @@ static int probe_configurations (struct gusb_device * device) {
       struct usb_descriptor_header * header = ptr;
       
       switch (header->bDescriptorType) {
-      break;
       case LIBUSB_DT_INTERFACE:
       interface = ptr;
       ret = probe_interface(device, index, ptr);
