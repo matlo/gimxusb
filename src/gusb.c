@@ -215,7 +215,7 @@ static struct gusb_device * add_device(const char * path, int print) {
     }
     current = current->next;
   }
-  struct gusb_device * device = calloc(1, sizeof(struct gusb_device));
+  struct gusb_device * device = calloc(1, sizeof(*device));
   if (device == NULL) {
     PRINT_ERROR_ALLOC_FAILED("calloc")
     return NULL;
@@ -449,7 +449,7 @@ static int get_configurations (struct gusb_device * device) {
     
     struct p_configuration * configurations = descriptors->configurations + index;
 
-    configurations->raw = calloc(descriptor.wTotalLength, sizeof(unsigned char));
+    configurations->raw = calloc(descriptor.wTotalLength, sizeof(*configurations->raw));
     if (configurations->raw == NULL) {
       PRINT_ERROR_ALLOC_FAILED("calloc");
       return -1;
@@ -603,7 +603,7 @@ static int probe_hid (struct gusb_device * device, unsigned char configurationIn
   unsigned char rdescIndex;
   for (rdescIndex = 0; rdescIndex < hid->bNumDescriptors; ++ rdescIndex) {
     if (hid->rdesc[rdescIndex].wReportDescriptorLength > 0) {
-      unsigned char * data = calloc(hid->rdesc[rdescIndex].wReportDescriptorLength, sizeof(unsigned char));
+      unsigned char * data = calloc(hid->rdesc[rdescIndex].wReportDescriptorLength, sizeof(*data));
       if (data == NULL) {
         PRINT_ERROR_ALLOC_FAILED("calloc")
         return -1;
@@ -731,7 +731,7 @@ static int probe_configurations (struct gusb_device * device) {
 static int get_device (struct gusb_device * device) {
 
   struct usb_device_descriptor * descriptor = &device->descriptors.device;
-  
+
   int ret = libusb_control_transfer(device->devh, LIBUSB_ENDPOINT_IN,
       LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_DEVICE << 8) | 0, 0, (unsigned char *)descriptor,
       sizeof(*descriptor), DEFAULT_TIMEOUT);
@@ -741,6 +741,11 @@ static int get_device (struct gusb_device * device) {
     return -1;
   }
   
+  if (ret != sizeof(*descriptor)) {
+    PRINT_ERROR_OTHER("invalid device descriptor size")
+    return -1;
+  }
+
   if (descriptor->iManufacturer) {
     ret = get_string_descriptor (device, descriptor->iManufacturer);
     if (ret < 0) {
@@ -1365,7 +1370,7 @@ int gusb_write(struct gusb_device * device, unsigned char endpoint, const void *
     return -1;
   }
 
-  unsigned char * buffer = malloc(count * sizeof(unsigned char));
+  unsigned char * buffer = malloc(count * sizeof(*buffer));
   if (buffer == NULL) {
 
     PRINT_ERROR_ALLOC_FAILED("calloc")
