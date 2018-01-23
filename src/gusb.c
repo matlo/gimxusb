@@ -35,6 +35,8 @@
 
 #define DEFAULT_STRING_BUFFER_SIZE 255
 
+GLOG_INST(GLOG_NAME)
+
 struct gusb_device {
   char * path;
   libusb_context * ctx;
@@ -60,7 +62,10 @@ struct gusb_device {
 
 GLIST_INST(struct gusb_device, usb_devices, gusb_close)
 
-#define PRINT_ERROR_INVALID_ENDPOINT(msg, endpoint) fprintf(stderr, "%s:%d %s: %s: 0x%02x\n", __FILE__, __LINE__, __func__, msg, endpoint);
+#define PRINT_ERROR_INVALID_ENDPOINT(msg, endpoint) \
+  if (GLOG_LEVEL(GLOG_NAME,ERROR)) { \
+    fprintf(stderr, "%s:%d %s: %s: 0x%02x\n", __FILE__, __LINE__, __func__, msg, endpoint); \
+  }
 
 #ifdef WIN32
 static struct gtimer * usb_timer = NULL;
@@ -429,7 +434,7 @@ static int get_configurations (struct gusb_device * device) {
 
   descriptors->configurations = calloc(descriptors->device.bNumConfigurations, sizeof(*descriptors->configurations));
   if (descriptors->configurations == NULL) {
-    PRINT_ERROR_ALLOC_FAILED("calloc");
+    PRINT_ERROR_ALLOC_FAILED("calloc")
     return -1;
   }
   
@@ -451,7 +456,7 @@ static int get_configurations (struct gusb_device * device) {
 
     configurations->raw = calloc(descriptor.wTotalLength, sizeof(*configurations->raw));
     if (configurations->raw == NULL) {
-      PRINT_ERROR_ALLOC_FAILED("calloc");
+      PRINT_ERROR_ALLOC_FAILED("calloc")
       return -1;
     }
     
@@ -474,7 +479,7 @@ static int add_descriptor (struct gusb_device * device, unsigned short wValue, u
   
   void * ptr = realloc(descriptors->others, (descriptors->nbOthers + 1) * sizeof(*descriptors->others));
   if (ptr == NULL) {
-    PRINT_ERROR_ALLOC_FAILED("realloc");
+    PRINT_ERROR_ALLOC_FAILED("realloc")
     free(data);
     return -1;
   }
@@ -496,7 +501,7 @@ static int get_string_descriptor (struct gusb_device * device, unsigned char ind
 
   unsigned char * data = calloc(DEFAULT_STRING_BUFFER_SIZE, sizeof(*data));
   if (data == NULL) {
-    PRINT_ERROR_ALLOC_FAILED("calloc");
+    PRINT_ERROR_ALLOC_FAILED("calloc")
     return -1;
   }
 
@@ -514,7 +519,7 @@ static int get_string_descriptor (struct gusb_device * device, unsigned char ind
   if (descriptor->bLength > ret) {
     void * ptr = realloc(data, descriptor->bLength * sizeof(*data));
     if (ptr == NULL) {
-      PRINT_ERROR_ALLOC_FAILED("realloc");
+      PRINT_ERROR_ALLOC_FAILED("realloc")
       free(data);
       return -1;
     }
@@ -546,7 +551,7 @@ static int probe_interface (struct gusb_device * device, unsigned char configura
 
   void * altInterfaces = realloc(pInterface->altInterfaces, (pInterface->bNumAltInterfaces + 1) * sizeof(*pInterface->altInterfaces));
   if(altInterfaces == NULL) {
-    PRINT_ERROR_ALLOC_FAILED("realloc");
+    PRINT_ERROR_ALLOC_FAILED("realloc")
     return -1;
   }
 
@@ -632,7 +637,7 @@ static int probe_endpoint (struct gusb_device * device, unsigned char configurat
 
   void * endpoints = realloc(pAltInterface->endpoints, (pAltInterface->bNumEndpoints + 1) * sizeof(*pAltInterface->endpoints));
   if(endpoints == NULL) {
-    PRINT_ERROR_ALLOC_FAILED("realloc");
+    PRINT_ERROR_ALLOC_FAILED("realloc")
     return -1;
   }
 
@@ -673,7 +678,7 @@ static int probe_configurations (struct gusb_device * device) {
 
     descriptors->configurations[index].interfaces = calloc(configuration->bNumInterfaces, sizeof(*descriptors->configurations[index].interfaces));
     if (descriptors->configurations[index].interfaces == NULL) {
-        PRINT_ERROR_ALLOC_FAILED("calloc");
+        PRINT_ERROR_ALLOC_FAILED("calloc")
         return -1;
     }
   
@@ -1085,7 +1090,7 @@ struct gusb_device * gusb_open_path(const char * path) {
   int dev_i;
 
   if (path == NULL) {
-    PRINT_ERROR_OTHER("path is NULL");
+    PRINT_ERROR_OTHER("path is NULL")
     return NULL;
   }
 
