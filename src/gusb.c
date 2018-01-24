@@ -10,6 +10,7 @@
 #ifdef WIN32
 #include <gimxtimer/include/gtimer.h>
 #endif
+#include <gimxlog/include/glog.h>
 
 #include <stdio.h>
 #include <string.h>
