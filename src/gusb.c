@@ -888,12 +888,6 @@ static int claim_device(struct gusb_device * device, libusb_device * dev) {
 #endif
 #endif
 
-  ret = libusb_reset_device(device->devh);
-  if (ret != LIBUSB_SUCCESS) {
-    PRINT_ERROR_LIBUSB("libusb_reset_device", ret)
-    return -1;
-  }
-
   int configuration;
   
   ret = libusb_get_configuration(device->devh, &configuration);
@@ -920,6 +914,12 @@ static int claim_device(struct gusb_device * device, libusb_device * dev) {
   ret = get_descriptors(device);
   if(ret < 0) {
       return -1;
+  }
+
+  ret = libusb_reset_device(device->devh);
+  if (ret != LIBUSB_SUCCESS) {
+    PRINT_ERROR_LIBUSB("libusb_reset_device", ret)
+    return -1;
   }
 
   return 0;
