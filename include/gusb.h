@@ -137,5 +137,6 @@ int gusb_write(struct gusb_device * device, unsigned char endpoint, const void *
 int gusb_write_timeout(struct gusb_device * device, unsigned char endpoint, void * buf, unsigned int count,
     unsigned int timeout);
 int gusb_poll(struct gusb_device * device, unsigned char endpoint);
+const char * gusb_get_path(struct gusb_device * device);
 
 #endif /* GUSB_H_ */

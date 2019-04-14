@@ -1414,3 +1414,8 @@ int gusb_write(struct gusb_device * device, unsigned char endpoint, const void *
 
   return submit_transfer(transfer);
 }
+
+const char * gusb_get_path(struct gusb_device * device) {
+
+    return device->path;
+}
