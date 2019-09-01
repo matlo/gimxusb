@@ -3,8 +3,8 @@ CXXFLAGS += -O3
 
 CPPFLAGS = -I../..
 
-LDFLAGS = -L../../gimxusb -L../../gimxpoll -L../../gimxtimer
-LDLIBS = -lgimxusb -lgimxpoll -lgimxtimer
+LDFLAGS = -L../../gimxusb -L../../gimxpoll -L../../gimxlog -L../../gimxtime -L../../gimxtimer
+LDLIBS = -lgimxusb -lgimxpoll -lgimxlog -lgimxtime -lgimxtimer
 
 BINS=gusb_test
 ifneq ($(OS),Windows_NT)

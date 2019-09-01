@@ -9,8 +9,8 @@ LDLIBS += -lgimxlog
 LDFLAGS += -lusb-1.0
 
 ifeq ($(OS),Windows_NT)
-LDFLAGS += -L../gimxtimer -L../gimxpoll
-LDLIBS += -lgimxtimer -lgimxpoll
+LDFLAGS += -L../gimxtime -L../gimxtimer -L../gimxpoll
+LDLIBS += -lgimxtime -lgimxtimer -lgimxpoll
 endif
 
 include Makedefs

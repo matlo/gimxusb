@@ -6,13 +6,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/time.h>
 #include <limits.h>
 #include <string.h>
 
 #include <gimxusb/include/gusb.h>
 #include <gimxpoll/include/gpoll.h>
 #include <gimxtimer/include/gtimer.h>
+#include <gimxtime/include/gtime.h>
 
 #include <gimxcommon/test/common.h>
 #include <gimxcommon/test/handlers.c>
@@ -159,9 +159,8 @@ int usb_read(void * user __attribute__((unused)), unsigned char endpoint, const 
   }
 
   if (status > 0) {
-    struct timeval t;
-    gettimeofday(&t, NULL);
-    printf("%ld.%06ld ", t.tv_sec, t.tv_usec);
+    gtime now = gtime_gettime();
+    printf("%lu.%06lu ", GTIME_SECPART(now), GTIME_USECPART(now));
     printf("%s\n", __func__);
     dump((unsigned char *) buf, status);
     fflush(stdout);
@@ -255,10 +254,6 @@ void usb_task() {
 }
 
 int usb_write(void * user __attribute__((unused)), unsigned char endpoint __attribute__((unused)), int transfered __attribute__((unused))) {
-
-  /*struct timeval t;
-  gettimeofday(&t, NULL);
-  printf("%ld.%06ld %s\n", t.tv_sec, t.tv_usec, __func__);*/
 
   if (endpoint == 0x00) {
 
