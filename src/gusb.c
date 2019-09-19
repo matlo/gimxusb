@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016 Mathieu Laurendeau <mat.lau@laposte.net>
+ Copyright (c) 2019 Mathieu Laurendeau <mat.lau@laposte.net>
  License: GPLv3
  */
 
@@ -62,6 +62,23 @@ struct gusb_device {
 };
 
 GLIST_INST(struct gusb_device, usb_devices, gusb_close)
+
+#if !defined(LIBUSB_API_VERSION) && !defined(LIBUSBX_API_VERSION)
+static const char * LIBUSB_CALL libusb_strerror(enum libusb_error errcode)
+{
+  return libusb_error_name(errcode);
+}
+#endif
+
+#define PRINT_ERROR_LIBUSB(libusbfunc,ret) \
+  if (GLOG_LEVEL(GLOG_NAME,ERROR)) { \
+    fprintf(stderr, "%s:%d %s: %s failed with error: %s\n", __FILE__, __LINE__, __func__, libusbfunc, libusb_strerror(ret)); \
+  }
+
+#define PRINT_TRANSFER_ERROR(transfer) \
+  if (GLOG_LEVEL(GLOG_NAME,ERROR)) { \
+    fprintf(stderr, "libusb_transfer failed with status %s (endpoint=0x%02x)\n", libusb_error_name(transfer->status), transfer->endpoint); \
+  }
 
 #define PRINT_ERROR_INVALID_ENDPOINT(msg, endpoint) \
   if (GLOG_LEVEL(GLOG_NAME,ERROR)) { \
