@@ -8,11 +8,14 @@
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
+#include <getopt.h>
 
 #include <gimxusb/include/gusb.h>
 #include <gimxpoll/include/gpoll.h>
 #include <gimxtimer/include/gtimer.h>
 #include <gimxtime/include/gtime.h>
+#include <gimxlog/include/glog.h>
+#include <gimxprio/include/gprio.h>
 
 #include <gimxcommon/test/common.h>
 #include <gimxcommon/test/handlers.c>
@@ -75,6 +78,11 @@ static struct {
         .right = { 7, { 0x11, 0x08, 0xa0, 0x80, 0x00, 0x00, 0x00 } },
     },
 };
+
+static unsigned int periods = 0;
+static int quiet = 0;
+static int debug = 0;
+static int prio = 0;
 
 static int ff_index = -1;
 
@@ -158,7 +166,7 @@ int usb_read(void * user __attribute__((unused)), unsigned char endpoint, const 
     return 1;
   }
 
-  if (status > 0) {
+  if (status > 0 && !quiet) {
     gtime now = gtime_gettime();
     printf("%lu.%06lu ", GTIME_SECPART(now), GTIME_USECPART(now));
     printf("%s\n", __func__);
@@ -257,7 +265,7 @@ int usb_write(void * user __attribute__((unused)), unsigned char endpoint __attr
 
   if (endpoint == 0x00) {
 
-      unsigned char endpoint;
+      unsigned char endpoint = 0;
       if(rumble_index >= 0) {
         endpoint = rumble_cmds[rumble_index].endpoints.in;
       }
@@ -280,9 +288,52 @@ int usb_close(void * user __attribute__((unused))) {
   return 0;
 }
 
+static void usage() {
+  fprintf(stderr, "Usage: ./gusb_test [-n period_count] [-p] [-q] [-d]\n");
+  exit(EXIT_FAILURE);
+}
+
+/*
+ * Reads command-line arguments.
+ */
+static int read_args(int argc, char* argv[]) {
+
+  int opt;
+  while ((opt = getopt(argc, argv, "dn:pq")) != -1) {
+    switch (opt) {
+    case 'd':
+      debug = 1;
+      break;
+    case 'n':
+      periods = atoi(optarg);
+      break;
+    case 'p':
+      prio = 1;
+      break;
+    case 'q':
+      quiet = 1;
+      break;
+    default: /* '?' */
+      usage();
+      break;
+    }
+  }
+  return 0;
+}
+
 int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused))) {
 
   setup_handlers();
+
+  read_args(argc, argv);
+
+  if (debug) {
+    glog_set_all_levels(E_GLOG_LEVEL_TRACE);
+  }
+
+  if (prio && gprio_init() < 0) {
+      return -1;
+  }
 
   if (gusb_init() < 0) {
     return -1;
@@ -351,6 +402,13 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
         gpoll();
 
         ++counter;
+
+        if (periods > 0) {
+            --periods;
+            if (periods == 0) {
+                set_done();
+            }
+        }
       }
 
       if (timer != NULL) {
@@ -370,6 +428,11 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
   }
 
   gusb_exit();
+
+  if (prio)
+  {
+    gprio_clean();
+  }
 
   free(path);
 

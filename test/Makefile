@@ -14,8 +14,8 @@ endif
 
 CPPFLAGS = -I../..
 
-LDFLAGS = -L../../gimxusb -L../../gimxpoll -L../../gimxlog -L../../gimxtime -L../../gimxtimer
-LDLIBS = -lgimxusb -lgimxpoll -lgimxlog -lgimxtime -lgimxtimer
+LDFLAGS = -L../../gimxusb -L../../gimxpoll -L../../gimxlog -L../../gimxtime -L../../gimxtimer -L../../gimxprio
+LDLIBS = -lgimxusb -lgimxpoll -lgimxlog -lgimxtime -lgimxtimer -lgimxprio
 
 BINS=gusb_test
 ifneq ($(OS),Windows_NT)
