@@ -321,7 +321,7 @@ static int read_args(int argc, char* argv[]) {
   return 0;
 }
 
-int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused))) {
+int main(int argc, char* argv[]) {
 
   setup_handlers();
 
@@ -329,10 +329,6 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
 
   if (debug) {
     glog_set_all_levels(E_GLOG_LEVEL_TRACE);
-  }
-
-  if (prio && gprio_init() < 0) {
-      return -1;
   }
 
   if (gusb_init() < 0) {
@@ -397,6 +393,10 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
           }
       }
 
+      if (prio && gprio_init() < 0) {
+          return -1;
+      }
+
       while (!is_done() || usb_busy) {
 
         gpoll();
@@ -409,6 +409,11 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
                 set_done();
             }
         }
+      }
+
+      if (prio)
+      {
+        gprio_clean();
       }
 
       if (timer != NULL) {
@@ -428,11 +433,6 @@ int main(int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
   }
 
   gusb_exit();
-
-  if (prio)
-  {
-    gprio_clean();
-  }
 
   free(path);
 
