@@ -61,7 +61,7 @@ struct gusb_device {
   GLIST_LINK(struct gusb_device);
 };
 
-GLIST_INST(struct gusb_device, usb_devices);
+static GLIST_INST(struct gusb_device, usb_devices);
 GLIST_DESTRUCTOR(usb_devices, gusb_close)
 
 #if !defined(LIBUSB_API_VERSION) && !defined(LIBUSBX_API_VERSION)
