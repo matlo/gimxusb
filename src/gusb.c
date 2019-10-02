@@ -251,7 +251,7 @@ static struct gusb_device * add_device(const char * path, int print) {
     free(device);
     return NULL;
   }
-  GLIST_ADD(usb_devices, device)
+  GLIST_ADD(usb_devices, device);
   return device;
 }
 
@@ -1374,7 +1374,7 @@ int gusb_close(struct gusb_device * device) {
   }
   free(device->descriptors.others);
 
-  GLIST_REMOVE(usb_devices, device)
+  GLIST_REMOVE(usb_devices, device);
 
   free(device);
 
