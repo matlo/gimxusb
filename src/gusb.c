@@ -480,7 +480,47 @@ static int add_descriptor (struct gusb_device * device, unsigned short wValue, u
   return 0;
 }
 
+static int get_lang_id_0 (struct gusb_device * device) {
+
+  if (device->descriptors.langId0.bLength >= 4) {
+      return 0; // already fetched
+  }
+
+  struct usb_string_descriptor * descriptor = &device->descriptors.langId0;
+
+  int ret = libusb_control_transfer(device->devh, LIBUSB_ENDPOINT_IN,
+      LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_STRING << 8) | 0, 0, (unsigned char *)descriptor,
+      sizeof(*descriptor), DEFAULT_TIMEOUT);
+
+  // LIBUSB_ERROR_PIPE means device sent a STALL packet
+  // device can have a string index set but no descriptor
+  if (ret == LIBUSB_ERROR_PIPE) {
+      if (GLOG_LEVEL(GLOG_NAME,DEBUG)) {
+        printf("%s:%d %s: libusb_control_transfer failed with error: %s\n", __FILE__, __LINE__, __func__, libusb_strerror(ret));
+      }
+      return 1;
+  }
+
+  if (ret < 0) {
+    PRINT_ERROR_LIBUSB("libusb_control_transfer", ret);
+    return 1;
+  }
+
+  if (ret < 4) {
+    memset(&device->descriptors.langId0, 0x00, sizeof(device->descriptors.langId0));
+    PRINT_ERROR_OTHER("failed to get wLANGID[0]");
+    return -1;
+  }
+
+  return 0;
+}
+
 static int get_string_descriptor (struct gusb_device * device, unsigned char index) {
+
+  int ret = get_lang_id_0(device);
+  if (ret != 0) {
+    return ret;
+  }
 
   s_usb_descriptors * descriptors = &device->descriptors;
 
@@ -490,8 +530,17 @@ static int get_string_descriptor (struct gusb_device * device, unsigned char ind
     return -1;
   }
 
-  int ret = libusb_control_transfer(device->devh, LIBUSB_ENDPOINT_IN,
+  ret = libusb_control_transfer(device->devh, LIBUSB_ENDPOINT_IN,
       LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_STRING << 8) | index, descriptors->langId0.wData[0], data, DEFAULT_STRING_BUFFER_SIZE, DEFAULT_TIMEOUT);
+
+  // LIBUSB_ERROR_PIPE means device sent a STALL packet
+  // device can have a string index set but no descriptor
+  if (ret == LIBUSB_ERROR_PIPE) {
+      if (GLOG_LEVEL(GLOG_NAME,DEBUG)) {
+        printf("%s:%d %s: libusb_control_transfer failed with error: %s\n", __FILE__, __LINE__, __func__, libusb_strerror(ret));
+      }
+      return 1;
+  }
 
   if (ret < 0) {
     PRINT_ERROR_LIBUSB("libusb_control_transfer", ret);
@@ -760,22 +809,7 @@ static int get_device (struct gusb_device * device) {
   return 0;
 }
 
-static void get_lang_id_0 (struct gusb_device * device) {
-
-  struct usb_string_descriptor * descriptor = &device->descriptors.langId0;
-
-  int ret = libusb_control_transfer(device->devh, LIBUSB_ENDPOINT_IN,
-      LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_STRING << 8) | 0, 0, (unsigned char *)descriptor,
-      sizeof(*descriptor), DEFAULT_TIMEOUT);
-  
-  if (ret < 0) {
-    PRINT_ERROR_LIBUSB("libusb_control_transfer", ret);
-  }
-}
-
 static int get_descriptors (struct gusb_device * device) {
-  
-  get_lang_id_0(device);
   
   int ret = get_device(device);
   if (ret < 0) {
@@ -1306,23 +1340,25 @@ int gusb_close(struct gusb_device * device) {
   }
 
   free(device->path);
-  unsigned char configurationIndex;
-  for (configurationIndex = 0; configurationIndex < device->descriptors.device.bNumConfigurations; ++configurationIndex) {
-    struct p_configuration * pConfiguration = device->descriptors.configurations + configurationIndex;
-    if (pConfiguration->descriptor != NULL) {
-      unsigned char interfaceIndex;
-      for (interfaceIndex = 0; interfaceIndex < pConfiguration->descriptor->bNumInterfaces; ++interfaceIndex) {
-        struct p_interface * pInterface = pConfiguration->interfaces + interfaceIndex;
-        unsigned char altInterfaceIndex;
-        for (altInterfaceIndex = 0; altInterfaceIndex < pInterface->bNumAltInterfaces; ++altInterfaceIndex) {
-          struct p_altInterface * pAltInterface = pInterface->altInterfaces + altInterfaceIndex;
-          free(pAltInterface->endpoints);
+  if (device->descriptors.configurations != NULL) {
+    unsigned char configurationIndex;
+    for (configurationIndex = 0; configurationIndex < device->descriptors.device.bNumConfigurations; ++configurationIndex) {
+      struct p_configuration * pConfiguration = device->descriptors.configurations + configurationIndex;
+      if (pConfiguration->descriptor != NULL) {
+        unsigned char interfaceIndex;
+        for (interfaceIndex = 0; interfaceIndex < pConfiguration->descriptor->bNumInterfaces; ++interfaceIndex) {
+          struct p_interface * pInterface = pConfiguration->interfaces + interfaceIndex;
+          unsigned char altInterfaceIndex;
+          for (altInterfaceIndex = 0; altInterfaceIndex < pInterface->bNumAltInterfaces; ++altInterfaceIndex) {
+            struct p_altInterface * pAltInterface = pInterface->altInterfaces + altInterfaceIndex;
+            free(pAltInterface->endpoints);
+          }
+          free(pInterface->altInterfaces);
         }
-        free(pInterface->altInterfaces);
+        free(pConfiguration->interfaces);
       }
-      free(pConfiguration->interfaces);
+      free(pConfiguration->raw);
     }
-    free(pConfiguration->raw);
   }
   free(device->descriptors.configurations);
   unsigned int othersIndex;
