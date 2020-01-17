@@ -123,8 +123,6 @@ struct gusb_device_info {
 
 struct gusb_device;
 
-int gusb_init();
-int gusb_exit();
 struct gusb_device * gusb_open_ids(unsigned short vendor, unsigned short product);
 struct gusb_device_info * gusb_enumerate(unsigned short vendor, unsigned short product);
 void gusb_free_enumeration(struct gusb_device_info * usb_devs);

@@ -62,7 +62,6 @@ struct gusb_device {
 };
 
 static GLIST_INST(struct gusb_device, usb_devices);
-GLIST_DESTRUCTOR(usb_devices, gusb_close)
 
 #if !defined(LIBUSB_API_VERSION) && !defined(LIBUSBX_API_VERSION)
 static const char * LIBUSB_CALL libusb_strerror(enum libusb_error errcode)
@@ -88,16 +87,6 @@ static const char * LIBUSB_CALL libusb_strerror(enum libusb_error errcode)
 #ifdef WIN32
 static struct gtimer * usb_timer = NULL;
 #endif
-
-static unsigned int clients = 0;
-
-#define CHECK_INITIALIZED(RETVALUE) \
-    do { \
-        if (clients == 0) { \
-            PRINT_ERROR_OTHER("gusb_init should be called first"); \
-            return RETVALUE; \
-        } \
-    } while (0)
 
 static int add_transfer(struct libusb_transfer * transfer) {
   struct gusb_device * device = (struct gusb_device *) transfer->user_data;
@@ -137,32 +126,6 @@ static void remove_transfer(struct libusb_transfer * transfer) {
       break;
     }
   }
-}
-
-int gusb_init() {
-
-    if (clients == UINT_MAX) {
-        PRINT_ERROR_OTHER("too many clients");
-        return -1;
-    }
-    ++clients;
-    return 0;
-}
-
-int gusb_exit() {
-
-    if (clients > 0) {
-        --clients;
-        if (clients == 0) {
-            GLIST_CLEAN_ALL(usb_devices, gusb_close);
-#ifdef WIN32
-            if (usb_timer != NULL) {
-                gtimer_close(usb_timer);
-            }
-#endif
-        }
-    }
-    return 0;
 }
 
 static inline unsigned char get_endpoint(struct gusb_device * device, unsigned char endpoint, unsigned char direction, unsigned int count) {
@@ -811,7 +774,7 @@ static void get_lang_id_0 (struct gusb_device * device) {
 }
 
 static int get_descriptors (struct gusb_device * device) {
-
+  
   get_lang_id_0(device);
   
   int ret = get_device(device);
@@ -948,8 +911,6 @@ static int claim_device(struct gusb_device * device, libusb_device * dev) {
 
 struct gusb_device_info * gusb_enumerate(unsigned short vendor, unsigned short product) {
 
-  CHECK_INITIALIZED(NULL);
-
   struct gusb_device_info * devs = NULL;
   struct gusb_device_info * last = NULL;
 
@@ -1047,8 +1008,6 @@ void gusb_free_enumeration(struct gusb_device_info * devs) {
 
 struct gusb_device * gusb_open_ids(unsigned short vendor, unsigned short product) {
 
-  CHECK_INITIALIZED(NULL);
-
   int ret = -1;
 
   static libusb_device** devs = NULL;
@@ -1108,8 +1067,6 @@ struct gusb_device * gusb_open_ids(unsigned short vendor, unsigned short product
 }
 
 struct gusb_device * gusb_open_path(const char * path) {
-
-  CHECK_INITIALIZED(NULL);
 
   int ret = -1;
 
@@ -1377,6 +1334,14 @@ int gusb_close(struct gusb_device * device) {
   GLIST_REMOVE(usb_devices, device);
 
   free(device);
+
+#ifdef WIN32
+  if (GLIST_IS_EMPTY(usb_devices)) {
+    if (usb_timer != NULL) {
+      gtimer_close(usb_timer);
+    }
+  }
+#endif
 
   return 1;
 }

@@ -331,10 +331,6 @@ int main(int argc, char* argv[]) {
     glog_set_all_levels(E_GLOG_LEVEL_TRACE);
   }
 
-  if (gusb_init() < 0) {
-    return -1;
-  }
-
   char * path = usb_select();
 
   if(path == NULL) {
@@ -431,8 +427,6 @@ int main(int argc, char* argv[]) {
       gusb_close(device);
     }
   }
-
-  gusb_exit();
 
   free(path);
 
