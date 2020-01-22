@@ -52,10 +52,11 @@ typedef struct {
 } s_ep_props;
 
 typedef enum {
-  E_TRANSFER_TIMED_OUT = -1,
-  E_TRANSFER_STALL = -2,
-  E_TRANSFER_ERROR = -3,
-} e_transfer_status;
+  E_STATUS_TRANSFER_TIMED_OUT = -1,
+  E_STATUS_TRANSFER_STALL = -2,
+  E_STATUS_TRANSFER_ERROR = -3,
+  E_STATUS_NO_DEVICE = -4,
+} e_usb_status;
 
 typedef int (* GUSB_READ_CALLBACK)(void * user, unsigned char endpoint, const void * buf, int status);
 typedef int (* GUSB_WRITE_CALLBACK)(void * user, unsigned char endpoint, int status);

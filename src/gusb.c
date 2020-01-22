@@ -251,15 +251,18 @@ static void usb_callback(struct libusb_transfer* transfer) {
     status = transfer->actual_length;
     break;
   case LIBUSB_TRANSFER_TIMED_OUT:
-    status = E_TRANSFER_TIMED_OUT;
+    status = E_STATUS_TRANSFER_TIMED_OUT;
     break;
   case LIBUSB_TRANSFER_STALL:
-    status = E_TRANSFER_STALL;
+    status = E_STATUS_TRANSFER_STALL;
+    break;
+  case LIBUSB_TRANSFER_NO_DEVICE:
+    status = E_STATUS_NO_DEVICE;
     break;
   case LIBUSB_TRANSFER_CANCELLED:
     break;
   default:
-    status = E_TRANSFER_ERROR;
+    status = E_STATUS_TRANSFER_ERROR;
     if (GLOG_LEVEL(GLOG_NAME,ERROR)) {
       fprintf(stderr, "libusb_transfer failed with status %s (endpoint=0x%02x)\n", libusb_error_name(transfer->status), transfer->endpoint);
     }
