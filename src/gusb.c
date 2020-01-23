@@ -245,6 +245,10 @@ static void usb_callback(struct libusb_transfer* transfer) {
     return;
   }
 
+  if (GLOG_LEVEL(GLOG_NAME,DEBUG)) {
+    fprintf(stderr, "endpoint: 0x%02x, transfer status: %s\n", transfer->endpoint, libusb_error_name(transfer->status));
+  }
+
   int status;
   switch (transfer->status) {
   case LIBUSB_TRANSFER_COMPLETED:
