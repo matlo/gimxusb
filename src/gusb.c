@@ -263,8 +263,6 @@ static void usb_callback(struct libusb_transfer* transfer) {
   case LIBUSB_TRANSFER_NO_DEVICE:
     status = E_STATUS_NO_DEVICE;
     break;
-  case LIBUSB_TRANSFER_CANCELLED:
-    break;
   default:
     status = E_STATUS_TRANSFER_ERROR;
     if (GLOG_LEVEL(GLOG_NAME,ERROR)) {
