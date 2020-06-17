@@ -967,7 +967,12 @@ struct gusb_device_info * gusb_enumerate(unsigned short vendor, unsigned short p
       return NULL;
   }
 #if defined(WIN32) && (LIBUSB_API_VERSION >= 0x01000106)
-  libusb_set_option(ctx, LIBUSB_OPTION_USE_USBDK);
+  ret = libusb_set_option(ctx, LIBUSB_OPTION_USE_USBDK);
+  if (ret == LIBUSB_ERROR_NOT_FOUND) {
+    PRINT_ERROR_OTHER("UsbDk is not installed");
+    libusb_exit(ctx);
+    return NULL;
+  }
 #endif
 
   cnt = libusb_get_device_list(ctx, &usb_devs);
@@ -1061,7 +1066,12 @@ struct gusb_device * gusb_open_ids(unsigned short vendor, unsigned short product
       return NULL;
   }
 #if defined(WIN32) && (LIBUSB_API_VERSION >= 0x01000106)
-  libusb_set_option(ctx, LIBUSB_OPTION_USE_USBDK);
+  ret = libusb_set_option(ctx, LIBUSB_OPTION_USE_USBDK);
+  if (ret == LIBUSB_ERROR_NOT_FOUND) {
+    PRINT_ERROR_OTHER("UsbDk is not installed");
+    libusb_exit(ctx);
+    return NULL;
+  }
 #endif
 
   cnt = libusb_get_device_list(ctx, &devs);
@@ -1126,7 +1136,12 @@ struct gusb_device * gusb_open_path(const char * path) {
       return NULL;
   }
 #if defined(WIN32) && (LIBUSB_API_VERSION >= 0x01000106)
-  libusb_set_option(ctx, LIBUSB_OPTION_USE_USBDK);
+  ret = libusb_set_option(ctx, LIBUSB_OPTION_USE_USBDK);
+  if (ret == LIBUSB_ERROR_NOT_FOUND) {
+    PRINT_ERROR_OTHER("UsbDk is not installed");
+    libusb_exit(ctx);
+    return NULL;
+  }
 #endif
 
   cnt = libusb_get_device_list(ctx, &devs);
