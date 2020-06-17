@@ -122,6 +122,10 @@ struct gusb_device_info {
     struct gusb_device_info * next;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct gusb_device;
 
 struct gusb_device * gusb_open_ids(unsigned short vendor, unsigned short product);
@@ -137,5 +141,9 @@ int gusb_write_timeout(struct gusb_device * device, unsigned char endpoint, void
     unsigned int timeout);
 int gusb_poll(struct gusb_device * device, unsigned char endpoint);
 const char * gusb_get_path(struct gusb_device * device);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GUSB_H_ */
