@@ -556,7 +556,8 @@ static int get_string_descriptor (struct gusb_device * device, unsigned char ind
   struct usb_descriptor_header * descriptor = (struct usb_descriptor_header *)data;
 
   if (descriptor->bLength > ret) {
-    void * ptr = realloc(data, descriptor->bLength * sizeof(*data));
+    size_t len = descriptor->bLength;
+    void * ptr = realloc(data, len * sizeof(*data));
     if (ptr == NULL) {
       PRINT_ERROR_ALLOC_FAILED("realloc");
       free(data);
@@ -566,7 +567,7 @@ static int get_string_descriptor (struct gusb_device * device, unsigned char ind
     data = ptr;
 
     ret = libusb_control_transfer(device->devh, LIBUSB_ENDPOINT_IN,
-        LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_STRING << 8) | index, descriptors->langId0.wData[0], data, descriptor->bLength, DEFAULT_TIMEOUT);
+        LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_STRING << 8) | index, descriptors->langId0.wData[0], data, len, DEFAULT_TIMEOUT);
     if (ret < 0) {
       PRINT_ERROR_LIBUSB("libusb_control_transfer", ret);
       free(data);
@@ -1270,7 +1271,6 @@ static int set_notifiers(struct gusb_device * device, libusb_context * ctx) {
     for (i = 0; pollfds[i] != NULL && ret != -1; ++i) {
       ret = pollfd_register(device, pollfds[i]->fd, pollfds[i]->events);
     }
-    free(pollfds);
 
     if (ret == -1) {
         // roll-back
@@ -1278,9 +1278,11 @@ static int set_notifiers(struct gusb_device * device, libusb_context * ctx) {
             pollfd_remove(device, pollfds[i]->fd);
         }
         libusb_set_pollfd_notifiers(ctx, NULL, NULL, NULL);
+        free(pollfds);
         return -1;
     }
 
+    free(pollfds);
     return 0;
 }
 #endif
